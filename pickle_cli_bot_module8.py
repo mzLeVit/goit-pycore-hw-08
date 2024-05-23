@@ -13,6 +13,7 @@ def load_data(filename="addressbook.pkl"):
             return pickle.load(f)
     except FileNotFoundError:
         return AddressBook()
+
 def input_error(func):
     def wrapper(*args, **kwargs):
         try:
@@ -35,7 +36,7 @@ class Name(Field):
 class Phone(Field):
     def __init__(self, number):
         if not self.validate(number):
-            raise ValueError("Phone number must be 10 digits.")
+            raise ValueError("Phone number must be exactly 10 digits.")
         super().__init__(number)
 
     @staticmethod
@@ -188,12 +189,15 @@ def add_contact(args, book):
     name, phone = args.split(maxsplit=1)
     record = book.find(name)
     if record:
-        return record.add_phone(phone)
+        add_phone_result = record.add_phone(phone)
+        return add_phone_result
     else:
         new_record = Record(name)
-        new_record.add_phone(phone)
+        add_phone_result = new_record.add_phone(phone)
+        if "Phone number must be exactly 10 digits." in add_phone_result:
+            return add_phone_result
         book.add_record(new_record)
-        return f"New contact '{name}' added with phone number '{phone}'."
+        return f"New contact '{name}' added with phone number '{phone}'.\n{add_phone_result}"
 
 @input_error
 def change_phone(args, book):
@@ -237,8 +241,6 @@ def parse_input(user_input):
 
 def main():
     book = load_data()
-    save_data(book)
-    book = AddressBook()
     print("Welcome to the assistant bot!")
     while True:
         user_input = input("Enter a command: ")
@@ -246,6 +248,7 @@ def main():
 
         if command in ["close", "exit"]:
             print("Good bye!")
+            save_data(book)
             break
 
         elif command == "hello":
